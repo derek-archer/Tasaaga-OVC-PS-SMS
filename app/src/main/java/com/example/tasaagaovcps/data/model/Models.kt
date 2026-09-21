@@ -1,5 +1,7 @@
 package com.example.tasaagaovcps.data.model
 
+import kotlinx.serialization.Serializable
+
 data class SchoolInfo(
     val mission: String,
     val motto: String,
@@ -34,3 +36,10 @@ data class NewsItem(
 enum class NewsCategory {
     CLINIC, COMMUNITY, SUCCESS_STORY
 }
+
+@Serializable
+data class Profile(
+    val id: String,
+    val role: String,
+    val email: String? = null
+)

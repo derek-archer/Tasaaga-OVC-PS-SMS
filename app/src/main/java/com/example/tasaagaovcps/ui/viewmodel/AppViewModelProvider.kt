@@ -20,6 +20,9 @@ object AppViewModelProvider {
         initializer {
             NewsViewModel(tasaagaApplication().container.newsRepository)
         }
+        initializer {
+            LoginViewModel(tasaagaApplication().container.userRepository)
+        }
     }
 }
 

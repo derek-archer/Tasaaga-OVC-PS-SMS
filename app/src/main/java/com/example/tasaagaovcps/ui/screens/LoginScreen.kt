@@ -15,14 +15,19 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tasaagaovcps.ui.components.TasaagaLogo
 import com.example.tasaagaovcps.ui.theme.TasaagaOVCPSTheme
+import com.example.tasaagaovcps.ui.viewmodel.AppViewModelProvider
+import com.example.tasaagaovcps.ui.viewmodel.LoginUiState
+import com.example.tasaagaovcps.ui.viewmodel.LoginViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     onLoginSuccess: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: LoginViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -30,7 +35,15 @@ fun LoginScreen(
     var selectedRole by remember { mutableStateOf("Parent") }
     var expanded by remember { mutableStateOf(false) }
 
+    val uiState by viewModel.uiState.collectAsState()
     val roles = listOf("Parent", "Teacher", "Student", "Admin", "Public")
+
+    LaunchedEffect(uiState) {
+        if (uiState is LoginUiState.Success) {
+            onLoginSuccess((uiState as LoginUiState.Success).role)
+            viewModel.resetState()
+        }
+    }
 
     Column(
         modifier = modifier
@@ -121,15 +134,33 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        if (uiState is LoginUiState.Error) {
+            Text(
+                text = (uiState as LoginUiState.Error).message,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
+
         Button(
-            onClick = { onLoginSuccess(selectedRole) },
+            onClick = { viewModel.login(email, password) },
+            enabled = uiState !is LoginUiState.Loading,
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             )
         ) {
-            Text("LOGIN", fontWeight = FontWeight.Bold)
+            if (uiState is com.example.tasaagaovcps.ui.viewmodel.LoginUiState.Loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("LOGIN", fontWeight = FontWeight.Bold)
+            }
         }
         
         Spacer(modifier = Modifier.height(16.dp))
