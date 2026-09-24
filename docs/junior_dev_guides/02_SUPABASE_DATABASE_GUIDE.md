@@ -44,7 +44,7 @@ The backend consists of 22 PostgreSQL tables created in [`docs/supabase/schema.s
 | **7** | `fee_structures` | `id`, `category`, `student_type`, `amount`, `term` | Fee rates for Day vs. Boarding |
 | **8** | `payments` | `id`, `receipt_no`, `student_id`, `amount`, `payment_method` | Fee payments & receipts (`RCP-2026-xxxx`) |
 | **9** | `expenses` | `id`, `date`, `category`, `description`, `amount`, `status` | Operational expenses & approvals |
-| **10** | `boarding_dorms` | `id`, `name`, `gender`, `capacity`, `occupied` | Dormitory capacity tracking (Dorm A - D) |
+| **10** | `boarding_dorms` | `id`, `name`, `gender`, `capacity`, `occupied` | African Animal Dormitories (`Dormitory Lion`, `Elephant`, `Giraffe`, `Zebra`) |
 | **11** | `boarding_allocations` | `id`, `student_id`, `dorm_name`, `room`, `bed` | Dorm room and bed allocations |
 | **12** | `boarding_welfare` | `id`, `student_name`, `incident_type`, `description` | Health and welfare incident logs |
 | **13** | `staff` | `id`, `name`, `role`, `department`, `phone`, `email` | Staff directory and roles |
