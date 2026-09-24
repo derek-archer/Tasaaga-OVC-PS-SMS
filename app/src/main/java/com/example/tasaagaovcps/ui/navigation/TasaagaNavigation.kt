@@ -2,13 +2,18 @@ package com.example.tasaagaovcps.ui.navigation
 
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountBox
 import androidx.compose.material.icons.rounded.Call
+import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Handshake
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material.icons.rounded.Payments
+import androidx.compose.material.icons.rounded.People
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VolunteerActivism
@@ -32,6 +37,48 @@ data object HomeRoute : TasaagaRoute {
 data object LoginRoute : TasaagaRoute {
     override val icon = Icons.Rounded.Lock
     override val label = "Portal Login"
+}
+
+@Serializable
+data object AdminDashboardRoute : TasaagaRoute {
+    override val icon = Icons.Rounded.Dashboard
+    override val label = "Admin Dashboard"
+}
+
+@Serializable
+data object HeadteacherDashboardRoute : TasaagaRoute {
+    override val icon = Icons.Rounded.AccountBox
+    override val label = "Headteacher Dashboard"
+}
+
+@Serializable
+data object TeacherDashboardRoute : TasaagaRoute {
+    override val icon = Icons.AutoMirrored.Rounded.MenuBook
+    override val label = "Teacher Dashboard"
+}
+
+@Serializable
+data object FinanceDashboardRoute : TasaagaRoute {
+    override val icon = Icons.Rounded.Payments
+    override val label = "Finance Dashboard"
+}
+
+@Serializable
+data object ParentDashboardRoute : TasaagaRoute {
+    override val icon = Icons.Rounded.People
+    override val label = "Parent Portal"
+}
+
+@Serializable
+data object BoardingDashboardRoute : TasaagaRoute {
+    override val icon = Icons.Rounded.Home
+    override val label = "Boarding Dashboard"
+}
+
+@Serializable
+data object StudentDashboardRoute : TasaagaRoute {
+    override val icon = Icons.Rounded.Person
+    override val label = "Student Portal"
 }
 
 @Serializable

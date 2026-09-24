@@ -1,7 +1,9 @@
 package com.example.tasaagaovcps.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -15,6 +17,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tasaagaovcps.ui.components.TasaagaLogo
 import com.example.tasaagaovcps.ui.theme.TasaagaOVCPSTheme
@@ -22,7 +25,7 @@ import com.example.tasaagaovcps.ui.viewmodel.AppViewModelProvider
 import com.example.tasaagaovcps.ui.viewmodel.LoginUiState
 import com.example.tasaagaovcps.ui.viewmodel.LoginViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun LoginScreen(
     onLoginSuccess: (String) -> Unit,
@@ -36,7 +39,17 @@ fun LoginScreen(
     var expanded by remember { mutableStateOf(false) }
 
     val uiState by viewModel.uiState.collectAsState()
-    val roles = listOf("Parent", "Teacher", "Student", "Admin", "Public")
+    val roles = listOf("Admin", "Headteacher", "Teacher", "Finance", "Parent", "Boarding", "Student", "Public")
+
+    val demoAccounts = listOf(
+        Triple("Admin", "admin@tasaagaschool.org", "Password123!"),
+        Triple("Headteacher", "headteacher@tasaagaschool.org", "Password123!"),
+        Triple("Teacher", "teacher@tasaagaschool.org", "Password123!"),
+        Triple("Finance", "finance@tasaagaschool.org", "Password123!"),
+        Triple("Parent", "parent@tasaagaschool.org", "Password123!"),
+        Triple("Boarding", "boarding@tasaagaschool.org", "Password123!"),
+        Triple("Student", "student@tasaagaschool.org", "Password123!")
+    )
 
     LaunchedEffect(uiState) {
         if (uiState is LoginUiState.Success) {
@@ -48,13 +61,14 @@ fun LoginScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         TasaagaLogo(showText = true)
         
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
         
         Text(
             text = "School Management Portal",
@@ -63,7 +77,7 @@ fun LoginScreen(
             color = MaterialTheme.colorScheme.secondary
         )
         
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         
         Text(
             text = "Login to access grades, reports, and payments.",
@@ -71,7 +85,7 @@ fun LoginScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Role Selector
         ExposedDropdownMenuBox(
@@ -103,7 +117,7 @@ fun LoginScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
             value = email,
@@ -114,7 +128,7 @@ fun LoginScreen(
             singleLine = true
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
             value = password,
@@ -132,14 +146,14 @@ fun LoginScreen(
             singleLine = true
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         if (uiState is LoginUiState.Error) {
             Text(
                 text = (uiState as LoginUiState.Error).message,
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 12.dp)
             )
         }
 
@@ -152,7 +166,7 @@ fun LoginScreen(
                 contentColor = MaterialTheme.colorScheme.onPrimary
             )
         ) {
-            if (uiState is com.example.tasaagaovcps.ui.viewmodel.LoginUiState.Loading) {
+            if (uiState is LoginUiState.Loading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
                     color = MaterialTheme.colorScheme.onPrimary,
@@ -162,11 +176,44 @@ fun LoginScreen(
                 Text("LOGIN", fontWeight = FontWeight.Bold)
             }
         }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        TextButton(onClick = { /* Handle Forgot Password */ }) {
-            Text("Forgot Password?", color = MaterialTheme.colorScheme.secondary)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Quick Demo Logins Section
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "⚡ Quick Demo Logins (7 Roles)",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    demoAccounts.forEach { (roleName, demoEmail, demoPass) ->
+                        FilterChip(
+                            selected = email == demoEmail,
+                            onClick = {
+                                email = demoEmail
+                                password = demoPass
+                                selectedRole = roleName
+                                viewModel.login(demoEmail, demoPass)
+                            },
+                            label = { Text(roleName, fontSize = 11.sp, fontWeight = FontWeight.Medium) }
+                        )
+                    }
+                }
+            }
         }
     }
 }

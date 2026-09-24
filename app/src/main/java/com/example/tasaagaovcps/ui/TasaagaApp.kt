@@ -42,26 +42,40 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.example.tasaagaovcps.ui.navigation.AboutRoute
+import com.example.tasaagaovcps.ui.navigation.AdminDashboardRoute
+import com.example.tasaagaovcps.ui.navigation.BoardingDashboardRoute
 import com.example.tasaagaovcps.ui.navigation.ContactRoute
+import com.example.tasaagaovcps.ui.navigation.FinanceDashboardRoute
+import com.example.tasaagaovcps.ui.navigation.HeadteacherDashboardRoute
 import com.example.tasaagaovcps.ui.navigation.HomeRoute
 import com.example.tasaagaovcps.ui.navigation.CommunityRoute
+import com.example.tasaagaovcps.ui.navigation.LoginRoute
 import com.example.tasaagaovcps.ui.navigation.MissionRoute
 import com.example.tasaagaovcps.ui.navigation.MoreRoute
+import com.example.tasaagaovcps.ui.navigation.ParentDashboardRoute
+import com.example.tasaagaovcps.ui.navigation.StudentDashboardRoute
 import com.example.tasaagaovcps.ui.navigation.SupportRoute
 import com.example.tasaagaovcps.ui.navigation.TOP_LEVEL_ROUTES
 import com.example.tasaagaovcps.ui.navigation.TasaagaRoute
+import com.example.tasaagaovcps.ui.navigation.TeacherDashboardRoute
 import com.example.tasaagaovcps.ui.navigation.VolunteerRoute
 import com.example.tasaagaovcps.ui.navigation.VisionRoute
 import com.example.tasaagaovcps.ui.navigation.PartnershipsRoute
-import com.example.tasaagaovcps.ui.navigation.LoginRoute
 import com.example.tasaagaovcps.ui.screens.AboutScreen
+import com.example.tasaagaovcps.ui.screens.AdminDashboardScreen
+import com.example.tasaagaovcps.ui.screens.BoardingDashboardScreen
 import com.example.tasaagaovcps.ui.screens.CommunityScreen
 import com.example.tasaagaovcps.ui.screens.ContactScreen
+import com.example.tasaagaovcps.ui.screens.FinanceDashboardScreen
+import com.example.tasaagaovcps.ui.screens.HeadteacherDashboardScreen
 import com.example.tasaagaovcps.ui.screens.HomeScreen
 import com.example.tasaagaovcps.ui.screens.LoginScreen
 import com.example.tasaagaovcps.ui.screens.MissionScreen
+import com.example.tasaagaovcps.ui.screens.ParentDashboardScreen
 import com.example.tasaagaovcps.ui.screens.PartnershipsScreen
+import com.example.tasaagaovcps.ui.screens.StudentDashboardScreen
 import com.example.tasaagaovcps.ui.screens.SupportScreen
+import com.example.tasaagaovcps.ui.screens.TeacherDashboardScreen
 import com.example.tasaagaovcps.ui.screens.VolunteerScreen
 import com.example.tasaagaovcps.ui.screens.VisionScreen
 import com.example.tasaagaovcps.ui.theme.TasaagaOVCPSTheme
@@ -120,7 +134,12 @@ fun TasaagaApp() {
                     ),
                     entryProvider = entryProvider {
                         entry<HomeRoute> {
-                            HomeScreen()
+                            HomeScreen(
+                                onNavigateToLogin = { topLevelBackStack.navigateToSubRoute(LoginRoute) },
+                                onNavigateToAdmissions = { topLevelBackStack.navigateToSubRoute(ContactRoute) },
+                                onNavigateToDonate = { topLevelBackStack.addTopLevel(SupportRoute) },
+                                onNavigateToVolunteer = { topLevelBackStack.addTopLevel(VolunteerRoute) }
+                            )
                         }
                         entry<AboutRoute> {
                             AboutScreen()
@@ -137,10 +156,39 @@ fun TasaagaApp() {
                         entry<LoginRoute> {
                             LoginScreen(
                                 onLoginSuccess = { role ->
-                                    // Implementation for routing after login can go here
-                                    topLevelBackStack.removeLast()
+                                    when (role) {
+                                        "Admin" -> topLevelBackStack.navigateToSubRoute(AdminDashboardRoute)
+                                        "Headteacher" -> topLevelBackStack.navigateToSubRoute(HeadteacherDashboardRoute)
+                                        "Teacher" -> topLevelBackStack.navigateToSubRoute(TeacherDashboardRoute)
+                                        "Finance" -> topLevelBackStack.navigateToSubRoute(FinanceDashboardRoute)
+                                        "Parent" -> topLevelBackStack.navigateToSubRoute(ParentDashboardRoute)
+                                        "Boarding" -> topLevelBackStack.navigateToSubRoute(BoardingDashboardRoute)
+                                        "Student" -> topLevelBackStack.navigateToSubRoute(StudentDashboardRoute)
+                                        else -> topLevelBackStack.removeLast()
+                                    }
                                 }
                             )
+                        }
+                        entry<AdminDashboardRoute> {
+                            AdminDashboardScreen(onLogout = { topLevelBackStack.removeLast() })
+                        }
+                        entry<HeadteacherDashboardRoute> {
+                            HeadteacherDashboardScreen(onLogout = { topLevelBackStack.removeLast() })
+                        }
+                        entry<TeacherDashboardRoute> {
+                            TeacherDashboardScreen(onLogout = { topLevelBackStack.removeLast() })
+                        }
+                        entry<FinanceDashboardRoute> {
+                            FinanceDashboardScreen(onLogout = { topLevelBackStack.removeLast() })
+                        }
+                        entry<ParentDashboardRoute> {
+                            ParentDashboardScreen(onLogout = { topLevelBackStack.removeLast() })
+                        }
+                        entry<BoardingDashboardRoute> {
+                            BoardingDashboardScreen(onLogout = { topLevelBackStack.removeLast() })
+                        }
+                        entry<StudentDashboardRoute> {
+                            StudentDashboardScreen(onLogout = { topLevelBackStack.removeLast() })
                         }
                         entry<MissionRoute> {
                             val viewModel: SchoolViewModel = viewModel(factory = AppViewModelProvider.Factory)

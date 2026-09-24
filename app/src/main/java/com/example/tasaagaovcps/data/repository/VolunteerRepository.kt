@@ -4,8 +4,10 @@ import com.example.tasaagaovcps.data.model.VolunteerOpportunity
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flow
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.http.Body
@@ -33,7 +35,26 @@ interface VolunteerRepository {
     suspend fun sendApplication(opportunityTitle: String, name: String, email: String, message: String)
 }
 
-class VolunteerRepositoryImpl : VolunteerRepository {
+class VolunteerRepositoryImpl(private val supabaseClient: SupabaseClient) : VolunteerRepository {
+    private val defaultOpportunities = listOf(
+        VolunteerOpportunity(
+            id = "1",
+            title = "Mentorship Program",
+            description = "Mentor students in various subjects and life skills.",
+            requirements = listOf("3-6 month commitment", "Passion for education", "Background check"),
+            duration = "3-6 months",
+            accommodation = "On-site accommodation provided"
+        ),
+        VolunteerOpportunity(
+            id = "2",
+            title = "Vocational Trainer",
+            description = "Teach vocational skills like carpentry, tailoring, or IT.",
+            requirements = listOf("Expertise in a craft", "Ability to teach", "2 months minimum"),
+            duration = "2+ months",
+            accommodation = "On-site accommodation provided"
+        )
+    )
+
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
         .build()
@@ -46,41 +67,30 @@ class VolunteerRepositoryImpl : VolunteerRepository {
             .create(ResendApiService::class.java)
     }
 
-    override fun getOpportunities(): Flow<List<VolunteerOpportunity>> = flowOf(
-        listOf(
-            VolunteerOpportunity(
-                id = "1",
-                title = "Mentorship Program",
-                description = "Mentor students in various subjects and life skills.",
-                requirements = listOf("3-6 month commitment", "Passion for education", "Background check"),
-                duration = "3-6 months",
-                accommodation = "On-site accommodation provided"
-            ),
-            VolunteerOpportunity(
-                id = "2",
-                title = "Vocational Trainer",
-                description = "Teach vocational skills like carpentry, tailoring, or IT.",
-                requirements = listOf("Expertise in a craft", "Ability to teach", "2 months minimum"),
-                duration = "2+ months",
-                accommodation = "On-site accommodation provided"
-            )
-        )
-    )
+    override fun getOpportunities(): Flow<List<VolunteerOpportunity>> = flow {
+        val remoteOpps = try {
+            supabaseClient.postgrest.from("volunteer_opportunities").select().decodeList<VolunteerOpportunity>()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+        if (remoteOpps.isNotEmpty()) {
+            emit(remoteOpps)
+        } else {
+            emit(defaultOpportunities)
+        }
+    }
 
     override suspend fun sendApplication(opportunityTitle: String, name: String, email: String, message: String) {
         val htmlContent = "<p><strong>Opportunity:</strong> $opportunityTitle</p><p><strong>Name:</strong> $name</p><p><strong>Email:</strong> $email</p><p><strong>Message:</strong> $message</p>"
 
-        // TESTING NOTE: Send from 'onboarding@resend.dev' only to your registered account 'derekmukasa@gmail.com'
-        // This prevents 401/403 errors on the Resend Free Tier during development.
         val request = ResendEmailRequest(
             from = "onboarding@resend.dev",
-            to = "derekmukasa@gmail.com", 
+            to = "derekmukasa@gmail.com",
             subject = "New Volunteer Application: $opportunityTitle",
             html = htmlContent
         )
 
-        // IMPORTANT: Replace 're_placeholder_key' with your REAL API Key from Resend Dashboard.
-        // Current 're_placeholder_key' WILL return HTTP 401 Unauthorized.
         apiService.sendEmail(
             authorization = "Bearer re_placeholder_key",
             request = request

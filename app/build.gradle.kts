@@ -13,17 +13,16 @@ android {
         applicationId = "com.example.tasaagaovcps"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 3
+        versionName = "1.1.0-TSMS"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            optimization {
-                enable = false
-            }
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
     compileOptions {
@@ -80,6 +79,7 @@ dependencies {
     implementation(libs.supabase.auth)
     implementation(libs.supabase.compose.auth)
     implementation(libs.ktor.client.android)
+    
     testImplementation(libs.androidx.core)
     testImplementation(libs.androidx.junit)
     testImplementation(libs.junit)
