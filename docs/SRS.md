@@ -64,7 +64,7 @@ TSMS enforces Role-Based Access Control (RBAC) across 7 distinct user roles:
 - Payment Reversals: Reversals require administrative approval and preserve full audit history.
 
 ### 3.5 Boarding & Welfare
-- Dormitory Management: Dormitory capacities, gender division (Dorm A/B Boys, Dorm C/D Girls), and occupancy tracking.
+- Dormitory Management: African animal dormitory naming (`Dormitory Lion` & `Dormitory Elephant` for Boys, `Dormitory Giraffe` & `Dormitory Zebra` for Girls), capacities, and occupancy tracking.
 - Bed Allocation & Welfare: Room/bed assignment and health/discipline incident logging (`Active` / `Resolved`).
 
 ### 3.6 Communication & Community Outreach

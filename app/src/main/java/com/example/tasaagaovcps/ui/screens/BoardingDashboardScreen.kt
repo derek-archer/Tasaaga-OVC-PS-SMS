@@ -37,8 +37,8 @@ fun BoardingDashboardScreen(
 ) {
     val incidentsList = remember {
         mutableStateListOf(
-            WelfareIncidentItem(1, "Akello Susan (P.5A)", "Reported sick • Dorm C, Room 2"),
-            WelfareIncidentItem(2, "Onen David (P.7B)", "Parent collecting today")
+            WelfareIncidentItem(1, "Akello Susan (P.5A)", "Reported sick • Dormitory Giraffe, Room 2"),
+            WelfareIncidentItem(2, "Onen David (P.7B)", "Parent collecting today • Dormitory Lion")
         )
     }
 
@@ -48,7 +48,7 @@ fun BoardingDashboardScreen(
     // ALLOCATE BED DIALOG
     if (showAllocateBedDialog) {
         var studentName by remember { mutableStateOf("") }
-        var selectedDorm by remember { mutableStateOf("Dorm A — Boys") }
+        var selectedDorm by remember { mutableStateOf("Dormitory Lion (Boys)") }
         var roomBed by remember { mutableStateOf("Room 2, Bed 04") }
 
         AlertDialog(
@@ -70,7 +70,7 @@ fun BoardingDashboardScreen(
                     OutlinedTextField(
                         value = selectedDorm,
                         onValueChange = { selectedDorm = it },
-                        label = { Text("Dormitory (Dorm A/B/C/D)") },
+                        label = { Text("Dormitory (Lion / Elephant / Giraffe / Zebra)") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -272,7 +272,7 @@ fun BoardingSummaryGrid(welfareCount: Int) {
             SummaryCard(
                 title = "Dormitories",
                 value = "4",
-                subText = "2 boys • 2 girls",
+                subText = "Lion, Elephant, Giraffe, Zebra",
                 icon = Icons.Rounded.Domain,
                 color = Color(0xFF2196F3),
                 modifier = Modifier.weight(1f)
@@ -297,14 +297,14 @@ fun DormitoryOccupancyCard() {
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("🏠 Dormitory Occupancy", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            Text("🏠 Dormitory Occupancy (African Animal Dorms)", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(12.dp))
 
             val dorms = listOf(
-                "Dorm A — Boys" to 22f/25f,
-                "Dorm B — Boys" to 26f/30f,
-                "Dorm C — Girls" to 20f/25f,
-                "Dorm D — Girls" to 17f/20f
+                "🦁 Dormitory Lion — Boys" to 22f/25f,
+                "🐘 Dormitory Elephant — Boys" to 26f/30f,
+                "🦒 Dormitory Giraffe — Girls" to 20f/25f,
+                "🦓 Dormitory Zebra — Girls" to 17f/20f
             )
 
             dorms.forEach { (name, occupancy) ->

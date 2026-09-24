@@ -111,11 +111,11 @@ ON CONFLICT (id) DO NOTHING;
 
 -- 13. BOARDING DORMS
 INSERT INTO public.boarding_dorms (id, name, gender, capacity, occupied) VALUES
-(1, 'Dorm A', 'Boys', 25, 22),
-(2, 'Dorm B', 'Boys', 30, 26),
-(3, 'Dorm C', 'Girls', 25, 20),
-(4, 'Dorm D', 'Girls', 20, 17)
-ON CONFLICT (id) DO NOTHING;
+(1, 'Dormitory Lion', 'Boys', 25, 22),
+(2, 'Dormitory Elephant', 'Boys', 30, 26),
+(3, 'Dormitory Giraffe', 'Girls', 25, 20),
+(4, 'Dormitory Zebra', 'Girls', 20, 17)
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, gender = EXCLUDED.gender, capacity = EXCLUDED.capacity, occupied = EXCLUDED.occupied;
 
 -- 14. STAFF
 INSERT INTO public.staff (id, name, role, department, phone, email, joined_date, status) VALUES
