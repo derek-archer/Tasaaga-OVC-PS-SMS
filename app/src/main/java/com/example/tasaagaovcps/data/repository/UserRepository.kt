@@ -15,15 +15,17 @@ interface UserRepository {
 class UserRepositoryImpl(override val supabaseClient: SupabaseClient) : UserRepository {
 
     // Demo Logins map for instant role testing and fallback
+    // schoolId = Tasaaga OVC Day & Boarding Primary School UUID
+    private val tasaagaSchoolId = "a7081bf1-0283-4aee-be9d-b66f590bb1a1"
     private val demoProfiles = mapOf(
-        "admin@tasaagaschool.org" to Profile("demo-admin", "Admin", "admin@tasaagaschool.org", "Admin User", "+256701000000"),
-        "derekmukasa@gmail.com" to Profile("admin-id", "Admin", "derekmukasa@gmail.com", "Derek Mukasa", "+256701000000"),
-        "headteacher@tasaagaschool.org" to Profile("demo-ht", "Headteacher", "headteacher@tasaagaschool.org", "Mrs. Rose Nakato", "+256701000001"),
-        "teacher@tasaagaschool.org" to Profile("demo-teacher", "Teacher", "teacher@tasaagaschool.org", "Ms. Sarah Amoko", "+256701000002"),
-        "finance@tasaagaschool.org" to Profile("demo-finance", "Finance", "finance@tasaagaschool.org", "Mr. David Okot", "+256701000004"),
-        "parent@tasaagaschool.org" to Profile("demo-parent", "Parent", "parent@tasaagaschool.org", "Mr. George Achola", "+256701234567"),
-        "boarding@tasaagaschool.org" to Profile("demo-boarding", "Boarding", "boarding@tasaagaschool.org", "Ms. Ruth Akello", "+256701000008"),
-        "student@tasaagaschool.org" to Profile("demo-student", "Student", "student@tasaagaschool.org", "Mary Achola", "+256701234567")
+        "admin@tasaagaschool.org" to Profile("demo-admin", "Admin", "admin@tasaagaschool.org", "Admin User", "+256701000000", tasaagaSchoolId),
+        "derekmukasa@gmail.com" to Profile("admin-id", "Admin", "derekmukasa@gmail.com", "Derek Mukasa", "+256701000000", tasaagaSchoolId),
+        "headteacher@tasaagaschool.org" to Profile("demo-ht", "Headteacher", "headteacher@tasaagaschool.org", "Mrs. Rose Nakato", "+256701000001", tasaagaSchoolId),
+        "teacher@tasaagaschool.org" to Profile("demo-teacher", "Teacher", "teacher@tasaagaschool.org", "Ms. Sarah Amoko", "+256701000002", tasaagaSchoolId),
+        "finance@tasaagaschool.org" to Profile("demo-finance", "Finance", "finance@tasaagaschool.org", "Mr. David Okot", "+256701000004", tasaagaSchoolId),
+        "parent@tasaagaschool.org" to Profile("demo-parent", "Parent", "parent@tasaagaschool.org", "Mr. George Achola", "+256701234567", tasaagaSchoolId),
+        "boarding@tasaagaschool.org" to Profile("demo-boarding", "Boarding", "boarding@tasaagaschool.org", "Ms. Ruth Akello", "+256701000008", tasaagaSchoolId),
+        "student@tasaagaschool.org" to Profile("demo-student", "Student", "student@tasaagaschool.org", "Mary Achola", "+256701234567", tasaagaSchoolId)
     )
 
     override suspend fun login(email: String, password: String): Profile? {

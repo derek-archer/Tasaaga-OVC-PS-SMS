@@ -28,7 +28,7 @@ import com.example.tasaagaovcps.ui.viewmodel.LoginViewModel
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun LoginScreen(
-    onLoginSuccess: (String) -> Unit,
+    onLoginSuccess: (role: String, schoolId: String, studentId: Int?, classId: Int?) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
@@ -53,7 +53,8 @@ fun LoginScreen(
 
     LaunchedEffect(uiState) {
         if (uiState is LoginUiState.Success) {
-            onLoginSuccess((uiState as LoginUiState.Success).role)
+            val s = uiState as LoginUiState.Success
+            onLoginSuccess(s.role, s.schoolId, s.studentId, s.classId)
             viewModel.resetState()
         }
     }
@@ -222,6 +223,6 @@ fun LoginScreen(
 @Composable
 fun LoginScreenPreview() {
     TasaagaOVCPSTheme {
-        LoginScreen(onLoginSuccess = {})
+        LoginScreen(onLoginSuccess = { _, _, _, _ -> })
     }
 }

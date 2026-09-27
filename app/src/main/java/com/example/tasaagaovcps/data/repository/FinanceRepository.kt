@@ -25,7 +25,7 @@ class FinanceRepositoryImpl(
             client.postgrest["payments"]
                 .select {
                     filter { eq("school_id", schoolId) }
-                    order("paid_at", Order.DESCENDING)
+                    order("payment_date", Order.DESCENDING)
                     limit(limit.toLong())
                 }
                 .decodeList<PaymentRecord>()
@@ -39,7 +39,7 @@ class FinanceRepositoryImpl(
             client.postgrest["payments"]
                 .select {
                     filter { eq("student_id", studentId) }
-                    order("paid_at", Order.DESCENDING)
+                    order("payment_date", Order.DESCENDING)
                 }
                 .decodeList<PaymentRecord>()
         } catch (e: Exception) {
@@ -64,7 +64,7 @@ class FinanceRepositoryImpl(
             client.postgrest["expenses"]
                 .select {
                     filter { eq("school_id", schoolId) }
-                    order("expense_date", Order.DESCENDING)
+                    order("date", Order.DESCENDING)
                     limit(limit.toLong())
                 }
                 .decodeList<ExpenseRecord>()

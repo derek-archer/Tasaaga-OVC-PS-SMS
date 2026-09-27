@@ -49,10 +49,14 @@ data class FinanceExpenseItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FinanceDashboardScreen(
+    schoolId: String = "",
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
     financeViewModel: FinanceViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
+    LaunchedEffect(schoolId) {
+        if (schoolId.isNotBlank()) financeViewModel.loadFinanceData(schoolId)
+    }
     val paymentsList = remember {
         mutableStateListOf(
             FinancePaymentItem("RCP-2026-1047", "Achola Mary", 450000.0, "Cash"),

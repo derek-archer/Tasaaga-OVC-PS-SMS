@@ -61,23 +61,38 @@ data class Profile(
 data class Student(
     val id: Int? = null,
     @SerialName("adm_no")
-    val admNo: String,
-    val fname: String,
-    val lname: String,
+    val admNo: String? = null,
+    // DB stores full name in "name" column; fname/lname may be separate columns
+    val name: String? = null,
+    val fname: String? = null,
+    val lname: String? = null,
     val dob: String? = null,
-    val gender: String,
+    val gender: String? = null,
     @SerialName("student_type")
-    val studentType: String,
+    val studentType: String? = null,
     @SerialName("class_id")
     val classId: Int? = null,
+    // DB stores class name as string in "class_name"
+    @SerialName("class_name")
+    val className: String? = null,
     @SerialName("guardian_name")
     val guardianName: String? = null,
     @SerialName("guardian_phone")
     val guardianPhone: String? = null,
-    val status: String = "Active",
+    val status: String? = "Active",
     @SerialName("school_id")
-    val schoolId: String? = null
-)
+    val schoolId: String? = null,
+    @SerialName("parent_id")
+    val parentId: String? = null
+) {
+    /** Display name: prefer fname+lname if set, fall back to the combined name column */
+    val displayName: String get() =
+        if (!fname.isNullOrBlank() && !lname.isNullOrBlank()) "$fname $lname"
+        else name ?: "Unknown Student"
+
+    /** Single-line class label */
+    val classLabel: String get() = className ?: classId?.let { "Class $it" } ?: "—"
+}
 
 @Serializable
 data class Parent(
@@ -115,9 +130,9 @@ data class AttendanceRecord(
     @SerialName("student_id")
     val studentId: Int,
     @SerialName("student_name")
-    val studentName: String,
+    val studentName: String? = null,
     @SerialName("adm_no")
-    val admNo: String,
+    val admNo: String? = null,
     @SerialName("class_id")
     val classId: Int? = null,
     val status: String,
@@ -125,7 +140,7 @@ data class AttendanceRecord(
     val recordedTime: String? = null,
     val note: String? = null,
     @SerialName("recorded_by")
-    val recordedBy: String,
+    val recordedBy: String? = null,
     val date: String
 )
 
@@ -278,11 +293,52 @@ data class AnnouncementItem(
     val id: Int? = null,
     val title: String,
     val body: String,
-    val audience: String,
+    val audience: String? = "All",
     @SerialName("published_by")
-    val publishedBy: String,
-    val date: String,
-    val status: String = "Published"
+    val publishedBy: String? = null,
+    val date: String? = null,
+    val status: String? = "Published"
+)
+
+@Serializable
+data class ExamResult(
+    val id: Int? = null,
+    @SerialName("student_id")
+    val studentId: Int,
+    @SerialName("student_name")
+    val studentName: String? = null,
+    @SerialName("adm_no")
+    val admNo: String? = null,
+    @SerialName("class_id")
+    val classId: Int? = null,
+    val subject: String,
+    val marks: Int,
+    @SerialName("max_marks")
+    val maxMarks: Int = 100,
+    val grade: String? = null,
+    val term: Int = 1,
+    @SerialName("academic_year")
+    val academicYear: Int = 2026,
+    @SerialName("entered_by")
+    val enteredBy: String? = null,
+    @SerialName("school_id")
+    val schoolId: String? = null
+)
+
+@Serializable
+data class TimetableSlot(
+    val id: Int? = null,
+    @SerialName("class_id")
+    val classId: Int,
+    val day: String,
+    @SerialName("start_time")
+    val startTime: String,
+    @SerialName("end_time")
+    val endTime: String,
+    val subject: String,
+    val teacher: String? = null,
+    @SerialName("school_id")
+    val schoolId: String? = null
 )
 
 @Serializable

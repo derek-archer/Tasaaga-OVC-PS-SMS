@@ -21,7 +21,10 @@ object AppViewModelProvider {
             NewsViewModel(tasaagaApplication().container.newsRepository)
         }
         initializer {
-            LoginViewModel(tasaagaApplication().container.userRepository)
+            LoginViewModel(
+                userRepository    = tasaagaApplication().container.userRepository,
+                studentRepository = tasaagaApplication().container.studentRepository
+            )
         }
         initializer {
             TeacherViewModel(
@@ -33,6 +36,45 @@ object AppViewModelProvider {
             FinanceViewModel(
                 financeRepository = tasaagaApplication().container.financeRepository,
                 geminiRepository  = tasaagaApplication().container.geminiRepository
+            )
+        }
+        initializer {
+            AdminViewModel(
+                studentRepository      = tasaagaApplication().container.studentRepository,
+                attendanceRepository   = tasaagaApplication().container.attendanceRepository,
+                announcementRepository = tasaagaApplication().container.announcementRepository
+            )
+        }
+        initializer {
+            HeadteacherViewModel(
+                studentRepository      = tasaagaApplication().container.studentRepository,
+                attendanceRepository   = tasaagaApplication().container.attendanceRepository,
+                staffRepository        = tasaagaApplication().container.staffRepository,
+                financeRepository      = tasaagaApplication().container.financeRepository,
+                announcementRepository = tasaagaApplication().container.announcementRepository
+            )
+        }
+        initializer {
+            BoardingViewModel(
+                boardingRepository = tasaagaApplication().container.boardingRepository,
+                studentRepository  = tasaagaApplication().container.studentRepository
+            )
+        }
+        initializer {
+            ParentViewModel(
+                studentRepository      = tasaagaApplication().container.studentRepository,
+                attendanceRepository   = tasaagaApplication().container.attendanceRepository,
+                examResultRepository   = tasaagaApplication().container.examResultRepository,
+                financeRepository      = tasaagaApplication().container.financeRepository,
+                announcementRepository = tasaagaApplication().container.announcementRepository
+            )
+        }
+        initializer {
+            StudentViewModel(
+                studentRepository      = tasaagaApplication().container.studentRepository,
+                examResultRepository   = tasaagaApplication().container.examResultRepository,
+                announcementRepository = tasaagaApplication().container.announcementRepository,
+                attendanceRepository   = tasaagaApplication().container.attendanceRepository
             )
         }
     }

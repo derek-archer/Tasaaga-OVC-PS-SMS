@@ -3,7 +3,6 @@ package com.example.tasaagaovcps.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -14,32 +13,28 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tasaagaovcps.data.model.Student
 import com.example.tasaagaovcps.ui.components.SummaryCard
 import com.example.tasaagaovcps.ui.theme.TasaagaOVCPSTheme
-
-data class RegisteredStudentItem(
-    val admNo: String,
-    val name: String,
-    val className: String,
-    val type: String
-)
+import com.example.tasaagaovcps.ui.viewmodel.AdminViewModel
+import com.example.tasaagaovcps.ui.viewmodel.AppViewModelProvider
 
 @Composable
 fun AdminDashboardScreen(
+    schoolId: String,
     onLogout: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    adminViewModel: AdminViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
-    val studentList = remember {
-        mutableStateListOf(
-            RegisteredStudentItem("TAS-2026-001", "Achola Mary", "P.6A", "Day"),
-            RegisteredStudentItem("TAS-2026-002", "Okello James", "P.4A", "Boarding"),
-            RegisteredStudentItem("TAS-2026-003", "Nakato Esther", "P.7A", "Day")
-        )
+    val state by adminViewModel.state.collectAsState()
+
+    LaunchedEffect(schoolId) {
+        adminViewModel.load(schoolId)
     }
 
     var showRegisterStudentDialog by remember { mutableStateOf(false) }
@@ -69,7 +64,6 @@ fun AdminDashboardScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
-
                     OutlinedTextField(
                         value = lname,
                         onValueChange = { lname = it },
@@ -77,7 +71,6 @@ fun AdminDashboardScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
-
                     Text("Student Type:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(
@@ -91,7 +84,6 @@ fun AdminDashboardScreen(
                             label = { Text("Boarding Student") }
                         )
                     }
-
                     OutlinedTextField(
                         value = className,
                         onValueChange = { className = it },
@@ -99,7 +91,6 @@ fun AdminDashboardScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
-
                     OutlinedTextField(
                         value = guardianName,
                         onValueChange = { guardianName = it },
@@ -113,9 +104,19 @@ fun AdminDashboardScreen(
                 Button(
                     onClick = {
                         if (fname.isNotBlank() && lname.isNotBlank()) {
-                            val autoAdmNo = "TAS-2026-${(100..999).random()}"
-                            studentList.add(0, RegisteredStudentItem(autoAdmNo, "$fname $lname", className, studentType))
-                            showRegisterStudentDialog = false
+                            val autoAdmNo = "TAS-${java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)}-${(100..999).random()}"
+                            adminViewModel.addStudent(
+                                Student(
+                                    admNo = autoAdmNo,
+                                    fname = fname,
+                                    lname = lname,
+                                    gender = "Unknown",
+                                    studentType = studentType,
+                                    guardianName = guardianName,
+                                    schoolId = schoolId
+                                ),
+                                onDone = { showRegisterStudentDialog = false }
+                            )
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -135,8 +136,22 @@ fun AdminDashboardScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item {
-            AdminHeader(onLogout)
+        item { AdminHeader(onLogout) }
+
+        if (state.error != null) {
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        state.error!!,
+                        modifier = Modifier.padding(12.dp),
+                        color = Color(0xFFB71C1C),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
         }
 
         item {
@@ -168,19 +183,44 @@ fun AdminDashboardScreen(
         }
 
         item {
-            SummaryGrid(studentCount = 247 + studentList.size - 3)
+            if (state.isLoading) {
+                Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                AdminSummaryGrid(
+                    totalStudents = state.totalStudents,
+                    attendanceRate = state.attendanceRate,
+                    presentCount = state.presentCount,
+                    absentCount = state.absentCount
+                )
+            }
         }
 
         item {
-            RegisteredStudentsCard(students = studentList)
+            if (!state.isLoading) {
+                LiveStudentsCard(students = state.students.take(20))
+            }
         }
 
         item {
-            FeeCollectionCard()
+            if (!state.isLoading) {
+                EnrollmentBreakdownCard(
+                    boysCount = state.boysCount,
+                    girlsCount = state.girlsCount,
+                    dayCount = state.dayCount,
+                    boardingCount = state.boardingCount
+                )
+            }
         }
 
-        item {
-            EnrollmentCard()
+        if (state.announcements.isNotEmpty()) {
+            item {
+                AnnouncementsListCard(
+                    title = "📢 School Announcements",
+                    announcements = state.announcements
+                )
+            }
         }
     }
 }
@@ -212,7 +252,7 @@ fun AdminHeader(onLogout: () -> Unit) {
                     color = Color.White
                 )
                 Text(
-                    text = "Term 3, 2026 • Full Overview",
+                    text = "Tasaaga OVC Primary School",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.8f)
                 )
@@ -225,12 +265,17 @@ fun AdminHeader(onLogout: () -> Unit) {
 }
 
 @Composable
-fun SummaryGrid(studentCount: Int) {
+fun AdminSummaryGrid(
+    totalStudents: Int,
+    attendanceRate: Double,
+    presentCount: Int,
+    absentCount: Int
+) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             SummaryCard(
                 title = "Total Students",
-                value = studentCount.toString(),
+                value = totalStudents.toString(),
                 subText = "Day & Boarding",
                 icon = Icons.Rounded.People,
                 color = Color(0xFFBC9522),
@@ -238,8 +283,8 @@ fun SummaryGrid(studentCount: Int) {
             )
             SummaryCard(
                 title = "Today's Attendance",
-                value = "93%",
-                subText = "230 present • 17 absent",
+                value = "${"%.0f".format(attendanceRate)}%",
+                subText = "$presentCount present • $absentCount absent",
                 icon = Icons.Rounded.CheckCircle,
                 color = Color(0xFF4CAF50),
                 modifier = Modifier.weight(1f)
@@ -249,7 +294,7 @@ fun SummaryGrid(studentCount: Int) {
 }
 
 @Composable
-fun RegisteredStudentsCard(students: List<RegisteredStudentItem>) {
+fun LiveStudentsCard(students: List<Student>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -257,63 +302,34 @@ fun RegisteredStudentsCard(students: List<RegisteredStudentItem>) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("🎓 Registered Students Directory", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(12.dp))
-
-            students.forEach { s ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(s.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                        Text("${s.admNo} • ${s.className}", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                    }
-                    Surface(
-                        color = Color(0xFFE8F5E9),
-                        shape = RoundedCornerShape(4.dp)
+            if (students.isEmpty()) {
+                Text("No students found.", style = MaterialTheme.typography.bodySmall, color = Color.Gray, modifier = Modifier.padding(top = 8.dp))
+            } else {
+                Spacer(modifier = Modifier.height(12.dp))
+                students.forEach { s ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(s.type, style = MaterialTheme.typography.labelSmall, color = Color(0xFF1B5E20), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        Column {
+                            Text(s.displayName, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                            Text("${s.admNo ?: "—"} • ${s.classLabel}", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        }
+                        val isBoarding = s.studentType == "Boarding"
+                        Surface(
+                            color = if (isBoarding) Color(0xFFE8EAF6) else Color(0xFFE8F5E9),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                s.studentType ?: "Day",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (isBoarding) Color(0xFF1A237E) else Color(0xFF1B5E20),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
                     }
-                }
-                HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFEEEEEE))
-            }
-        }
-    }
-}
-
-@Composable
-fun FeeCollectionCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("📊 Fee Collection by Class", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(12.dp))
-
-            val classes = listOf(
-                "P.7" to 0.90f,
-                "P.6" to 0.80f,
-                "P.1" to 0.85f,
-                "P.4" to 0.72f,
-                "P.5" to 0.58f
-            )
-
-            classes.forEach { (name, progress) ->
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
-                    Text(name, modifier = Modifier.width(32.dp), style = MaterialTheme.typography.bodySmall)
-                    LinearProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(8.dp)
-                            .padding(horizontal = 8.dp),
-                        color = if (progress > 0.7f) Color(0xFF4CAF50) else Color(0xFFBC9522),
-                        trackColor = Color(0xFFEEEEEE),
-                    )
-                    Text("${(progress * 100).toInt()}%", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFEEEEEE))
                 }
             }
         }
@@ -321,7 +337,7 @@ fun FeeCollectionCard() {
 }
 
 @Composable
-fun EnrollmentCard() {
+fun EnrollmentBreakdownCard(boysCount: Int, girlsCount: Int, dayCount: Int, boardingCount: Int) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -331,10 +347,10 @@ fun EnrollmentCard() {
             Text("👥 Enrollment Breakdown", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                EnrollmentStat("Boys", "128", Color(0xFF2196F3))
-                EnrollmentStat("Girls", "119", Color(0xFFE91E63))
-                EnrollmentStat("Day", "162", Color(0xFF7B1FA2))
-                EnrollmentStat("Boarding", "85", Color(0xFFFF9800))
+                EnrollmentStat("Boys", boysCount.toString(), Color(0xFF2196F3))
+                EnrollmentStat("Girls", girlsCount.toString(), Color(0xFFE91E63))
+                EnrollmentStat("Day", dayCount.toString(), Color(0xFF7B1FA2))
+                EnrollmentStat("Boarding", boardingCount.toString(), Color(0xFFFF9800))
             }
         }
     }
@@ -348,10 +364,37 @@ fun EnrollmentStat(label: String, value: String, color: Color) {
     }
 }
 
+@Composable
+fun AnnouncementsListCard(title: String, announcements: List<com.example.tasaagaovcps.data.model.AnnouncementItem>) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            announcements.take(5).forEach { ann ->
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE8EEF8)),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(ann.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall, color = Color(0xFF1A3A6B))
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(ann.body, style = MaterialTheme.typography.labelSmall, color = Color.DarkGray)
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun AdminDashboardPreview() {
     TasaagaOVCPSTheme {
-        AdminDashboardScreen(onLogout = {})
+        // Preview uses an empty schoolId; real usage passes from login
+        AdminDashboardScreen(schoolId = "preview", onLogout = {})
     }
 }

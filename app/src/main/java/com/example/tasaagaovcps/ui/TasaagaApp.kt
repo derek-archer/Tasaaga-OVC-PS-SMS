@@ -155,40 +155,40 @@ fun TasaagaApp() {
                         }
                         entry<LoginRoute> {
                             LoginScreen(
-                                onLoginSuccess = { role ->
+                                onLoginSuccess = { role, schoolId, studentId, classId ->
                                     when (role) {
-                                        "Admin" -> topLevelBackStack.navigateToSubRoute(AdminDashboardRoute)
-                                        "Headteacher" -> topLevelBackStack.navigateToSubRoute(HeadteacherDashboardRoute)
-                                        "Teacher" -> topLevelBackStack.navigateToSubRoute(TeacherDashboardRoute)
-                                        "Finance" -> topLevelBackStack.navigateToSubRoute(FinanceDashboardRoute)
-                                        "Parent" -> topLevelBackStack.navigateToSubRoute(ParentDashboardRoute)
-                                        "Boarding" -> topLevelBackStack.navigateToSubRoute(BoardingDashboardRoute)
-                                        "Student" -> topLevelBackStack.navigateToSubRoute(StudentDashboardRoute)
-                                        else -> topLevelBackStack.removeLast()
+                                        "Admin"       -> topLevelBackStack.navigateToSubRoute(AdminDashboardRoute(schoolId))
+                                        "Headteacher" -> topLevelBackStack.navigateToSubRoute(HeadteacherDashboardRoute(schoolId))
+                                        "Teacher"     -> topLevelBackStack.navigateToSubRoute(TeacherDashboardRoute(schoolId, classId))
+                                        "Finance"     -> topLevelBackStack.navigateToSubRoute(FinanceDashboardRoute(schoolId))
+                                        "Parent"      -> topLevelBackStack.navigateToSubRoute(ParentDashboardRoute(schoolId, studentId))
+                                        "Boarding"    -> topLevelBackStack.navigateToSubRoute(BoardingDashboardRoute(schoolId))
+                                        "Student"     -> topLevelBackStack.navigateToSubRoute(StudentDashboardRoute(schoolId, studentId, classId))
+                                        else          -> topLevelBackStack.removeLast()
                                     }
                                 }
                             )
                         }
-                        entry<AdminDashboardRoute> {
-                            AdminDashboardScreen(onLogout = { topLevelBackStack.removeLast() })
+                        entry<AdminDashboardRoute> { entry ->
+                            AdminDashboardScreen(schoolId = entry.schoolId, onLogout = { topLevelBackStack.removeLast() })
                         }
-                        entry<HeadteacherDashboardRoute> {
-                            HeadteacherDashboardScreen(onLogout = { topLevelBackStack.removeLast() })
+                        entry<HeadteacherDashboardRoute> { entry ->
+                            HeadteacherDashboardScreen(schoolId = entry.schoolId, onLogout = { topLevelBackStack.removeLast() })
                         }
-                        entry<TeacherDashboardRoute> {
-                            TeacherDashboardScreen(onLogout = { topLevelBackStack.removeLast() })
+                        entry<TeacherDashboardRoute> { entry ->
+                            TeacherDashboardScreen(schoolId = entry.schoolId, classId = entry.classId, onLogout = { topLevelBackStack.removeLast() })
                         }
-                        entry<FinanceDashboardRoute> {
-                            FinanceDashboardScreen(onLogout = { topLevelBackStack.removeLast() })
+                        entry<FinanceDashboardRoute> { entry ->
+                            FinanceDashboardScreen(schoolId = entry.schoolId, onLogout = { topLevelBackStack.removeLast() })
                         }
-                        entry<ParentDashboardRoute> {
-                            ParentDashboardScreen(onLogout = { topLevelBackStack.removeLast() })
+                        entry<ParentDashboardRoute> { entry ->
+                            ParentDashboardScreen(schoolId = entry.schoolId, studentId = entry.studentId, onLogout = { topLevelBackStack.removeLast() })
                         }
-                        entry<BoardingDashboardRoute> {
-                            BoardingDashboardScreen(onLogout = { topLevelBackStack.removeLast() })
+                        entry<BoardingDashboardRoute> { entry ->
+                            BoardingDashboardScreen(schoolId = entry.schoolId, onLogout = { topLevelBackStack.removeLast() })
                         }
-                        entry<StudentDashboardRoute> {
-                            StudentDashboardScreen(onLogout = { topLevelBackStack.removeLast() })
+                        entry<StudentDashboardRoute> { entry ->
+                            StudentDashboardScreen(schoolId = entry.schoolId, studentId = entry.studentId, classId = entry.classId, onLogout = { topLevelBackStack.removeLast() })
                         }
                         entry<MissionRoute> {
                             val viewModel: SchoolViewModel = viewModel(factory = AppViewModelProvider.Factory)

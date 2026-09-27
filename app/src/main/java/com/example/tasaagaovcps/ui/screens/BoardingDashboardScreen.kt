@@ -3,7 +3,6 @@ package com.example.tasaagaovcps.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -19,27 +18,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tasaagaovcps.data.model.BoardingDorm
+import com.example.tasaagaovcps.data.model.WelfareIncident
+import com.example.tasaagaovcps.ui.viewmodel.BoardingViewModel
 import com.example.tasaagaovcps.ui.components.SummaryCard
 import com.example.tasaagaovcps.ui.theme.TasaagaOVCPSTheme
+import com.example.tasaagaovcps.ui.viewmodel.AppViewModelProvider
+import com.example.tasaagaovcps.ui.viewmodel.BoardingViewModel
 
-data class WelfareIncidentItem(
-    val id: Int,
-    val studentName: String,
-    val issue: String,
-    var status: String = "Active"
-)
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BoardingDashboardScreen(
+    schoolId: String,
     onLogout: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    boardingViewModel: BoardingViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
-    val incidentsList = remember {
-        mutableStateListOf(
-            WelfareIncidentItem(1, "Akello Susan (P.5A)", "Reported sick • Dormitory Giraffe, Room 2"),
-            WelfareIncidentItem(2, "Onen David (P.7B)", "Parent collecting today • Dormitory Lion")
-        )
+    val state by boardingViewModel.state.collectAsState()
+
+    LaunchedEffect(schoolId) {
+        boardingViewModel.load(schoolId)
     }
 
     var showAllocateBedDialog by remember { mutableStateOf(false) }
@@ -48,8 +46,8 @@ fun BoardingDashboardScreen(
     // ALLOCATE BED DIALOG
     if (showAllocateBedDialog) {
         var studentName by remember { mutableStateOf("") }
-        var selectedDorm by remember { mutableStateOf("Dormitory Lion (Boys)") }
-        var roomBed by remember { mutableStateOf("Room 2, Bed 04") }
+        var selectedDorm by remember { mutableStateOf("") }
+        var roomBed by remember { mutableStateOf("") }
 
         AlertDialog(
             onDismissRequest = { showAllocateBedDialog = false },
@@ -66,15 +64,13 @@ fun BoardingDashboardScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
-
                     OutlinedTextField(
                         value = selectedDorm,
                         onValueChange = { selectedDorm = it },
-                        label = { Text("Dormitory (Lion / Elephant / Giraffe / Zebra)") },
+                        label = { Text("Dormitory Name") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
-
                     OutlinedTextField(
                         value = roomBed,
                         onValueChange = { roomBed = it },
@@ -86,9 +82,7 @@ fun BoardingDashboardScreen(
             },
             confirmButton = {
                 Button(
-                    onClick = {
-                        if (studentName.isNotBlank()) showAllocateBedDialog = false
-                    },
+                    onClick = { if (studentName.isNotBlank()) showAllocateBedDialog = false },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A3A6B))
                 ) {
                     Text("Confirm Bed Allocation")
@@ -103,6 +97,7 @@ fun BoardingDashboardScreen(
     // LOG INCIDENT DIALOG
     if (showLogIncidentDialog) {
         var studentName by remember { mutableStateOf("") }
+        var incidentType by remember { mutableStateOf("Health") }
         var incidentDetails by remember { mutableStateOf("") }
 
         AlertDialog(
@@ -120,11 +115,20 @@ fun BoardingDashboardScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
-
+                    Text("Incident Type:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("Health", "Discipline", "General").forEach { type ->
+                            FilterChip(
+                                selected = incidentType == type,
+                                onClick = { incidentType = type },
+                                label = { Text(type, fontSize = 11.sp) }
+                            )
+                        }
+                    }
                     OutlinedTextField(
                         value = incidentDetails,
                         onValueChange = { incidentDetails = it },
-                        label = { Text("Incident / Health Note *") },
+                        label = { Text("Incident Description *") },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 2
                     )
@@ -134,7 +138,11 @@ fun BoardingDashboardScreen(
                 Button(
                     onClick = {
                         if (studentName.isNotBlank() && incidentDetails.isNotBlank()) {
-                            incidentsList.add(0, WelfareIncidentItem(incidentsList.size + 1, studentName, incidentDetails))
+                            boardingViewModel.reportIncident(
+                                studentName = studentName,
+                                incidentType = incidentType,
+                                description = incidentDetails
+                            )
                             showLogIncidentDialog = false
                         }
                     },
@@ -155,8 +163,22 @@ fun BoardingDashboardScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item {
-            BoardingHeader(onLogout)
+        item { BoardingHeader(onLogout) }
+
+        if (state.error != null) {
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        state.error!!,
+                        modifier = Modifier.padding(12.dp),
+                        color = Color(0xFFB71C1C),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
         }
 
         item {
@@ -195,15 +217,37 @@ fun BoardingDashboardScreen(
         }
 
         item {
-            BoardingSummaryGrid(welfareCount = incidentsList.count { it.status == "Active" })
+            if (state.isLoading) {
+                Box(modifier = Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                val capacityPercent = if (state.totalCapacity > 0)
+                    (state.totalOccupied.toDouble() / state.totalCapacity * 100).toInt() else 0
+                val availableBeds = state.totalCapacity - state.totalOccupied
+
+                BoardingSummaryGrid(
+                    totalBoarders = state.totalBoarders,
+                    boysCount = state.boysCount,
+                    girlsCount = state.girlsCount,
+                    dormCount = state.dorms.size,
+                    capacityPercent = capacityPercent,
+                    availableBeds = availableBeds,
+                    welfareCount = state.welfareIncidents.count { it.status == "Active" }
+                )
+            }
         }
 
-        item {
-            DormitoryOccupancyCard()
+        if (!state.isLoading && state.dorms.isNotEmpty()) {
+            item {
+                LiveDormitoryCard(dorms = state.dorms)
+            }
         }
 
-        item {
-            WelfareFlagsCard(incidents = incidentsList)
+        if (!state.isLoading && state.welfareIncidents.isNotEmpty()) {
+            item {
+                LiveWelfareFlagsCard(incidents = state.welfareIncidents)
+            }
         }
     }
 }
@@ -212,7 +256,7 @@ fun BoardingDashboardScreen(
 fun BoardingHeader(onLogout: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A3A6B)) // Website Blue
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A3A6B))
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -235,7 +279,7 @@ fun BoardingHeader(onLogout: () -> Unit) {
                     color = Color.White
                 )
                 Text(
-                    text = "Ms. Akello Ruth • Boarding Officer",
+                    text = "Tasaaga OVC Primary School",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.8f)
                 )
@@ -248,21 +292,29 @@ fun BoardingHeader(onLogout: () -> Unit) {
 }
 
 @Composable
-fun BoardingSummaryGrid(welfareCount: Int) {
+fun BoardingSummaryGrid(
+    totalBoarders: Int,
+    boysCount: Int,
+    girlsCount: Int,
+    dormCount: Int,
+    capacityPercent: Int,
+    availableBeds: Int,
+    welfareCount: Int
+) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             SummaryCard(
                 title = "Total Boarders",
-                value = "85",
-                subText = "Boys: 48 • Girls: 37",
+                value = totalBoarders.toString(),
+                subText = "Boys: $boysCount • Girls: $girlsCount",
                 icon = Icons.Rounded.Bed,
                 color = Color(0xFFBC9522),
                 modifier = Modifier.weight(1f)
             )
             SummaryCard(
                 title = "Capacity Used",
-                value = "85%",
-                subText = "15 beds available",
+                value = "$capacityPercent%",
+                subText = "$availableBeds beds available",
                 icon = Icons.Rounded.PieChart,
                 color = Color(0xFF4CAF50),
                 modifier = Modifier.weight(1f)
@@ -271,8 +323,8 @@ fun BoardingSummaryGrid(welfareCount: Int) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             SummaryCard(
                 title = "Dormitories",
-                value = "4",
-                subText = "Lion, Elephant, Giraffe, Zebra",
+                value = dormCount.toString(),
+                subText = "Active dorms",
                 icon = Icons.Rounded.Domain,
                 color = Color(0xFF2196F3),
                 modifier = Modifier.weight(1f)
@@ -290,33 +342,36 @@ fun BoardingSummaryGrid(welfareCount: Int) {
 }
 
 @Composable
-fun DormitoryOccupancyCard() {
+fun LiveDormitoryCard(dorms: List<BoardingDorm>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("🏠 Dormitory Occupancy (African Animal Dorms)", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            Text("🏠 Dormitory Occupancy", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(12.dp))
 
-            val dorms = listOf(
-                "🦁 Dormitory Lion — Boys" to 22f/25f,
-                "🐘 Dormitory Elephant — Boys" to 26f/30f,
-                "🦒 Dormitory Giraffe — Girls" to 20f/25f,
-                "🦓 Dormitory Zebra — Girls" to 17f/20f
-            )
+            dorms.forEach { dorm ->
+                val occupancy = if (dorm.capacity > 0) dorm.occupied.toFloat() / dorm.capacity.toFloat() else 0f
+                val isBoysFlag = dorm.gender?.lowercase()?.contains("boy") == true || dorm.gender?.lowercase() == "male"
 
-            dorms.forEach { (name, occupancy) ->
                 Column(modifier = Modifier.padding(vertical = 6.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(name, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                        Text("${(occupancy * 100).toInt()}%", style = MaterialTheme.typography.labelSmall)
+                        Text(
+                            dorm.name,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "${dorm.occupied}/${dorm.capacity} (${(occupancy * 100).toInt()}%)",
+                            style = MaterialTheme.typography.labelSmall
+                        )
                     }
                     LinearProgressIndicator(
                         progress = { occupancy },
                         modifier = Modifier.fillMaxWidth().height(8.dp).padding(top = 4.dp),
-                        color = if (name.contains("Boys")) Color(0xFF1A3A6B) else Color(0xFFEE5A5A),
+                        color = if (isBoysFlag) Color(0xFF1A3A6B) else Color(0xFFEE5A5A),
                         trackColor = Color(0xFFEEEEEE),
                     )
                 }
@@ -326,7 +381,7 @@ fun DormitoryOccupancyCard() {
 }
 
 @Composable
-fun WelfareFlagsCard(incidents: List<WelfareIncidentItem>) {
+fun LiveWelfareFlagsCard(incidents: List<WelfareIncident>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -336,11 +391,17 @@ fun WelfareFlagsCard(incidents: List<WelfareIncidentItem>) {
             Text("⚠️ Welfare Flags & Incidents", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
 
-            incidents.forEach { item ->
+            incidents.take(10).forEach { item ->
                 ListItem(
                     headlineContent = { Text(item.studentName, fontWeight = FontWeight.Bold) },
-                    supportingContent = { Text(item.issue) },
-                    leadingContent = { Box(modifier = Modifier.size(8.dp).background(Color(0xFFF44336), RoundedCornerShape(4.dp))) },
+                    supportingContent = { Text("[${item.incidentType}] ${item.description}") },
+                    leadingContent = {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(Color(0xFFF44336), RoundedCornerShape(4.dp))
+                        )
+                    },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                 )
                 HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFEEEEEE))
@@ -353,6 +414,6 @@ fun WelfareFlagsCard(incidents: List<WelfareIncidentItem>) {
 @Composable
 fun BoardingDashboardPreview() {
     TasaagaOVCPSTheme {
-        BoardingDashboardScreen(onLogout = {})
+        BoardingDashboardScreen(schoolId = "preview", onLogout = {})
     }
 }

@@ -40,43 +40,43 @@ data object LoginRoute : TasaagaRoute {
 }
 
 @Serializable
-data object AdminDashboardRoute : TasaagaRoute {
+data class AdminDashboardRoute(val schoolId: String) : TasaagaRoute {
     override val icon = Icons.Rounded.Dashboard
     override val label = "Admin Dashboard"
 }
 
 @Serializable
-data object HeadteacherDashboardRoute : TasaagaRoute {
+data class HeadteacherDashboardRoute(val schoolId: String) : TasaagaRoute {
     override val icon = Icons.Rounded.AccountBox
     override val label = "Headteacher Dashboard"
 }
 
 @Serializable
-data object TeacherDashboardRoute : TasaagaRoute {
+data class TeacherDashboardRoute(val schoolId: String, val classId: Int? = null) : TasaagaRoute {
     override val icon = Icons.AutoMirrored.Rounded.MenuBook
     override val label = "Teacher Dashboard"
 }
 
 @Serializable
-data object FinanceDashboardRoute : TasaagaRoute {
+data class FinanceDashboardRoute(val schoolId: String) : TasaagaRoute {
     override val icon = Icons.Rounded.Payments
     override val label = "Finance Dashboard"
 }
 
 @Serializable
-data object ParentDashboardRoute : TasaagaRoute {
+data class ParentDashboardRoute(val schoolId: String, val studentId: Int? = null) : TasaagaRoute {
     override val icon = Icons.Rounded.People
     override val label = "Parent Portal"
 }
 
 @Serializable
-data object BoardingDashboardRoute : TasaagaRoute {
+data class BoardingDashboardRoute(val schoolId: String) : TasaagaRoute {
     override val icon = Icons.Rounded.Home
     override val label = "Boarding Dashboard"
 }
 
 @Serializable
-data object StudentDashboardRoute : TasaagaRoute {
+data class StudentDashboardRoute(val schoolId: String, val studentId: Int? = null, val classId: Int? = null) : TasaagaRoute {
     override val icon = Icons.Rounded.Person
     override val label = "Student Portal"
 }

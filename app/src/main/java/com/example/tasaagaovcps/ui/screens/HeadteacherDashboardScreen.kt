@@ -3,7 +3,6 @@ package com.example.tasaagaovcps.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.automirrored.rounded.Grading
 import androidx.compose.material.icons.automirrored.rounded.Logout
@@ -18,65 +17,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tasaagaovcps.data.model.ExpenseRecord
 import com.example.tasaagaovcps.ui.components.SummaryCard
 import com.example.tasaagaovcps.ui.theme.TasaagaOVCPSTheme
-
-data class PendingApprovalItem(
-    val id: Int,
-    val title: String,
-    val description: String,
-    var status: String = "Pending"
-)
+import com.example.tasaagaovcps.ui.viewmodel.AppViewModelProvider
+import com.example.tasaagaovcps.ui.viewmodel.HeadteacherViewModel
 
 @Composable
 fun HeadteacherDashboardScreen(
+    schoolId: String,
     onLogout: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    headteacherViewModel: HeadteacherViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
-    val pendingList = remember {
-        mutableStateListOf(
-            PendingApprovalItem(1, "P.7A Term 3 Results", "Teacher Opio, awaiting academic sign-off"),
-            PendingApprovalItem(2, "Expense Requisition", "UGX 450,000 for P.5 & P.6 exercise books"),
-            PendingApprovalItem(3, "OVC Fee Support Request", "Okello James (P.4B), subsidized fees")
-        )
-    }
+    val state by headteacherViewModel.state.collectAsState()
 
-    var selectedItemForApproval by remember { mutableStateOf<PendingApprovalItem?>(null) }
-
-    if (selectedItemForApproval != null) {
-        val item = selectedItemForApproval!!
-        AlertDialog(
-            onDismissRequest = { selectedItemForApproval = null },
-            title = { Text("Review & Approve — ${item.title}", fontWeight = FontWeight.Bold) },
-            text = { Text("Details: ${item.description}\n\nDo you want to formally approve this submission?") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val idx = pendingList.indexOfFirst { it.id == item.id }
-                        if (idx != -1) {
-                            pendingList[idx] = item.copy(status = "Approved ✓")
-                        }
-                        selectedItemForApproval = null
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20))
-                ) {
-                    Text("Approve Submission")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        val idx = pendingList.indexOfFirst { it.id == item.id }
-                        if (idx != -1) {
-                            pendingList[idx] = item.copy(status = "Rejected")
-                        }
-                        selectedItemForApproval = null
-                    }
-                ) {
-                    Text("Reject", color = Color(0xFFB71C1C))
-                }
-            }
-        )
+    LaunchedEffect(schoolId) {
+        headteacherViewModel.load(schoolId)
     }
 
     LazyColumn(
@@ -85,23 +43,52 @@ fun HeadteacherDashboardScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item {
-            HeadteacherHeader(onLogout)
+        item { HeadteacherHeader(onLogout) }
+
+        if (state.error != null) {
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        state.error!!,
+                        modifier = Modifier.padding(12.dp),
+                        color = Color(0xFFB71C1C),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
         }
 
         item {
-            HeadteacherSummaryGrid(pendingCount = pendingList.count { it.status == "Pending" })
+            if (state.isLoading) {
+                Box(modifier = Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                HeadteacherSummaryGrid(
+                    attendanceRate = state.attendanceRate,
+                    activeStaff = state.activeStaff,
+                    staffOnLeave = state.staffOnLeave,
+                    pendingExpensesCount = state.pendingExpenses.size
+                )
+            }
         }
 
-        item {
-            WeeklyAttendanceTrendCard()
+        if (!state.isLoading && state.pendingExpenses.isNotEmpty()) {
+            item {
+                PendingExpensesCard(expenses = state.pendingExpenses)
+            }
         }
 
-        item {
-            PendingApprovalsCard(
-                approvals = pendingList,
-                onReviewClick = { selectedItemForApproval = it }
-            )
+        if (!state.isLoading && state.announcements.isNotEmpty()) {
+            item {
+                AnnouncementsListCard(
+                    title = "📢 School Announcements",
+                    announcements = state.announcements
+                )
+            }
         }
     }
 }
@@ -110,7 +97,7 @@ fun HeadteacherDashboardScreen(
 fun HeadteacherHeader(onLogout: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A3A6B)) // Website Blue
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A3A6B))
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -133,7 +120,7 @@ fun HeadteacherHeader(onLogout: () -> Unit) {
                     color = Color.White
                 )
                 Text(
-                    text = "Mrs. Nakato Rose • Term 3, 2026",
+                    text = "Tasaaga OVC Primary School",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.8f)
                 )
@@ -146,39 +133,44 @@ fun HeadteacherHeader(onLogout: () -> Unit) {
 }
 
 @Composable
-fun HeadteacherSummaryGrid(pendingCount: Int) {
+fun HeadteacherSummaryGrid(
+    attendanceRate: Double,
+    activeStaff: Int,
+    staffOnLeave: Int,
+    pendingExpensesCount: Int
+) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             SummaryCard(
                 title = "Attendance Rate",
-                value = "93%",
-                subText = "Week average",
+                value = "${"%.0f".format(attendanceRate)}%",
+                subText = "School-wide average",
                 icon = Icons.Rounded.AssignmentTurnedIn,
                 color = Color(0xFF4CAF50),
                 modifier = Modifier.weight(1f)
             )
             SummaryCard(
-                title = "Results Submitted",
-                value = "68%",
-                subText = "18 of 26 classes",
-                icon = Icons.AutoMirrored.Rounded.Grading,
-                color = Color(0xFF2196F3),
+                title = "Active Staff",
+                value = activeStaff.toString(),
+                subText = "$staffOnLeave on leave",
+                icon = Icons.Rounded.SupervisorAccount,
+                color = Color(0xFFBC9522),
                 modifier = Modifier.weight(1f)
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             SummaryCard(
-                title = "Staff Present",
-                value = "22/24",
-                subText = "2 on leave",
-                icon = Icons.Rounded.SupervisorAccount,
-                color = Color(0xFFBC9522),
+                title = "Staff on Leave",
+                value = staffOnLeave.toString(),
+                subText = "Currently absent",
+                icon = Icons.AutoMirrored.Rounded.Grading,
+                color = Color(0xFF2196F3),
                 modifier = Modifier.weight(1f)
             )
             SummaryCard(
-                title = "Pending Approvals",
-                value = pendingCount.toString(),
-                subText = "Requires action",
+                title = "Pending Expenses",
+                value = pendingExpensesCount.toString(),
+                subText = "Requires approval",
                 icon = Icons.Rounded.ReportProblem,
                 color = Color(0xFFF44336),
                 modifier = Modifier.weight(1f)
@@ -188,70 +180,34 @@ fun HeadteacherSummaryGrid(pendingCount: Int) {
 }
 
 @Composable
-fun WeeklyAttendanceTrendCard() {
+fun PendingExpensesCard(expenses: List<ExpenseRecord>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("📈 Weekly Attendance Trend", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            Text("⏳ Pending Expense Approvals", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(12.dp))
 
-            val days = listOf(
-                "Monday" to 0.95f,
-                "Tuesday" to 0.91f,
-                "Wednesday" to 0.88f,
-                "Thursday" to 0.93f,
-                "Friday" to 0.89f
-            )
-
-            days.forEach { (name, progress) ->
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
-                    Text(name, modifier = Modifier.width(80.dp), style = MaterialTheme.typography.bodySmall)
-                    LinearProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(8.dp)
-                            .padding(horizontal = 8.dp),
-                        color = if (progress > 0.9f) Color(0xFF4CAF50) else Color(0xFFBC9522),
-                        trackColor = Color(0xFFEEEEEE),
-                    )
-                    Text("${(progress * 100).toInt()}%", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun PendingApprovalsCard(
-    approvals: List<PendingApprovalItem>,
-    onReviewClick: (PendingApprovalItem) -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("⏳ Pending Approvals & Sign-offs", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(12.dp))
-
-            approvals.forEach { item ->
+            expenses.take(10).forEach { expense ->
                 ListItem(
-                    headlineContent = { Text(item.title, fontWeight = FontWeight.Bold) },
-                    supportingContent = { Text(item.description) },
+                    headlineContent = { Text(expense.description ?: expense.category, fontWeight = FontWeight.Bold) },
+                    supportingContent = {
+                        Text("UGX %,.0f • ${expense.category}".format(expense.amount))
+                    },
                     trailingContent = {
-                        Button(
-                            onClick = { onReviewClick(item) },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (item.status.contains("Approved")) Color(0xFF4CAF50) else Color(0xFF1A3A6B)
-                            ),
-                            shape = RoundedCornerShape(6.dp)
+                        Surface(
+                            color = Color(0xFFFFF8E1),
+                            shape = RoundedCornerShape(4.dp)
                         ) {
-                            Text(if (item.status == "Pending") "Review" else item.status, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                expense.status,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFFBC9522),
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
                         }
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent)
@@ -266,6 +222,6 @@ fun PendingApprovalsCard(
 @Composable
 fun HeadteacherDashboardPreview() {
     TasaagaOVCPSTheme {
-        HeadteacherDashboardScreen(onLogout = {})
+        HeadteacherDashboardScreen(schoolId = "preview", onLogout = {})
     }
 }

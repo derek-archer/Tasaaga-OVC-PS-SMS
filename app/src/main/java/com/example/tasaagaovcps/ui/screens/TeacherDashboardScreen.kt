@@ -64,10 +64,15 @@ data class StudentResultEntry(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeacherDashboardScreen(
+    schoolId: String = "",
+    classId: Int? = null,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
     teacherViewModel: TeacherViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
+    LaunchedEffect(classId) {
+        classId?.let { teacherViewModel.loadAttendance(it.toString()) }
+    }
     val studentList = remember {
         mutableStateListOf(
             StudentAttendanceState(1, "Achola Mary", "TAS-2026-001", "Present"),
