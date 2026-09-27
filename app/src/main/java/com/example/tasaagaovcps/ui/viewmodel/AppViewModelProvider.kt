@@ -77,6 +77,9 @@ object AppViewModelProvider {
                 attendanceRepository   = tasaagaApplication().container.attendanceRepository
             )
         }
+        initializer {
+            ContactViewModel(tasaagaApplication().container.contactRepository)
+        }
     }
 }
 

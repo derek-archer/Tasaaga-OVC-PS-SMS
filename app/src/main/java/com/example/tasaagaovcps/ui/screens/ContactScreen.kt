@@ -19,48 +19,69 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.tasaagaovcps.ui.theme.TasaagaOVCPSTheme
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tasaagaovcps.ui.viewmodel.AppViewModelProvider
+import com.example.tasaagaovcps.ui.viewmodel.ContactUiState
+import com.example.tasaagaovcps.ui.viewmodel.ContactViewModel
 
 @Composable
 fun ContactScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    contactViewModel: ContactViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var subject by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
-
     var hasAttemptedSubmit by remember { mutableStateOf(false) }
-    var showSuccessDialog by remember { mutableStateOf(false) }
+
+    val uiState by contactViewModel.uiState.collectAsState()
 
     val isNameValid = name.isNotBlank()
     val isEmailValid = email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email).matches()
     val isMessageValid = message.isNotBlank()
+    val isSending = uiState is ContactUiState.Sending
 
-    if (showSuccessDialog) {
+    // Success dialog
+    if (uiState is ContactUiState.Success) {
         AlertDialog(
-            onDismissRequest = { showSuccessDialog = false },
-            title = { Text("Inquiry Message Sent!") },
-            text = { Text("Thank you for reaching out to Tasaaga OVC Primary School. Our administration office will get back to you at $email shortly.") },
+            onDismissRequest = {
+                contactViewModel.resetState()
+                name = ""; email = ""; phone = ""; subject = ""; message = ""
+                hasAttemptedSubmit = false
+            },
+            title = { Text("Message Sent!") },
+            text = {
+                Text(
+                    "Thank you for reaching out to Tasaaga OVC Primary School. " +
+                    "Our administration will reply to $email shortly."
+                )
+            },
             confirmButton = {
                 Button(
                     onClick = {
-                        showSuccessDialog = false
-                        name = ""
-                        email = ""
-                        phone = ""
-                        subject = ""
-                        message = ""
+                        contactViewModel.resetState()
+                        name = ""; email = ""; phone = ""; subject = ""; message = ""
                         hasAttemptedSubmit = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB71C1C))
-                ) {
-                    Text("Close")
-                }
+                ) { Text("Close") }
+            }
+        )
+    }
+
+    // Error dialog
+    if (uiState is ContactUiState.Error) {
+        val errorMsg = (uiState as ContactUiState.Error).message
+        AlertDialog(
+            onDismissRequest = { contactViewModel.resetState() },
+            title = { Text("Send Failed") },
+            text = { Text("Could not send your message: $errorMsg\n\nPlease try again or email us directly at info@tasaagaschool.org.") },
+            confirmButton = {
+                Button(onClick = { contactViewModel.resetState() }) { Text("OK") }
             }
         )
     }
@@ -105,7 +126,7 @@ fun ContactScreen(
             }
         }
 
-        // CONTACT CARDS
+        // CONTACT INFO
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -116,99 +137,33 @@ fun ContactScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(Color(0xFFE8F5E9), RoundedCornerShape(8.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.LocationOn,
-                                contentDescription = "Location",
-                                tint = Color(0xFF1B5E20)
-                            )
-                        }
-                        Column {
-                            Text(text = "Campus Location", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                            Text(text = "Sitabaale, Kiwenda, Wakiso District, Uganda", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-                        }
-                    }
-
+                    ContactInfoRow(
+                        icon = { Icon(Icons.Rounded.LocationOn, "Location", tint = Color(0xFF1B5E20)) },
+                        iconBg = Color(0xFFE8F5E9),
+                        label = "Campus Location",
+                        value = "Sitabaale, Kiwenda, Wakiso District, Uganda"
+                    )
                     HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFEEEEEE))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(Color(0xFFFFEBEE), RoundedCornerShape(8.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Phone,
-                                contentDescription = "Phone",
-                                tint = Color(0xFFB71C1C)
-                            )
-                        }
-                        Column {
-                            Text(text = "Phone Number", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                            Text(text = "+256 0789 532 928  /  +256 0701 234 567", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-                        }
-                    }
-
+                    ContactInfoRow(
+                        icon = { Icon(Icons.Rounded.Phone, "Phone", tint = Color(0xFFB71C1C)) },
+                        iconBg = Color(0xFFFFEBEE),
+                        label = "Phone Number",
+                        value = "+256 0789 532 928  /  +256 0701 234 567"
+                    )
                     HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFEEEEEE))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(Color(0xFFE3F2FD), RoundedCornerShape(8.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Email,
-                                contentDescription = "Email",
-                                tint = Color(0xFF1565C0)
-                            )
-                        }
-                        Column {
-                            Text(text = "Email Address", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                            Text(text = "info@tasaagaschool.org", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-                        }
-                    }
-
+                    ContactInfoRow(
+                        icon = { Icon(Icons.Rounded.Email, "Email", tint = Color(0xFF1565C0)) },
+                        iconBg = Color(0xFFE3F2FD),
+                        label = "Email Address",
+                        value = "info@tasaagaschool.org"
+                    )
                     HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFEEEEEE))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(Color(0xFFFFF8E1), RoundedCornerShape(8.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.AccessTime,
-                                contentDescription = "Hours",
-                                tint = Color(0xFFF57F17)
-                            )
-                        }
-                        Column {
-                            Text(text = "Office Hours", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                            Text(text = "Monday - Friday: 8:00 AM - 5:00 PM EAT", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-                        }
-                    }
+                    ContactInfoRow(
+                        icon = { Icon(Icons.Rounded.AccessTime, "Hours", tint = Color(0xFFF57F17)) },
+                        iconBg = Color(0xFFFFF8E1),
+                        label = "Office Hours",
+                        value = "Monday - Friday: 8:00 AM - 5:00 PM EAT"
+                    )
                 }
             }
         }
@@ -238,12 +193,12 @@ fun ContactScreen(
                         label = { Text("Your Full Name *") },
                         isError = hasAttemptedSubmit && !isNameValid,
                         supportingText = {
-                            if (hasAttemptedSubmit && !isNameValid) {
+                            if (hasAttemptedSubmit && !isNameValid)
                                 Text("Name is required", color = MaterialTheme.colorScheme.error)
-                            }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        singleLine = true,
+                        enabled = !isSending
                     )
 
                     OutlinedTextField(
@@ -252,14 +207,16 @@ fun ContactScreen(
                         label = { Text("Email Address *") },
                         isError = hasAttemptedSubmit && !isEmailValid,
                         supportingText = {
-                            if (hasAttemptedSubmit && !isEmailValid) {
-                                val errorMsg = if (email.isBlank()) "Email is required" else "Invalid email address"
-                                Text(errorMsg, color = MaterialTheme.colorScheme.error)
-                            }
+                            if (hasAttemptedSubmit && !isEmailValid)
+                                Text(
+                                    if (email.isBlank()) "Email is required" else "Invalid email address",
+                                    color = MaterialTheme.colorScheme.error
+                                )
                         },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        singleLine = true
+                        singleLine = true,
+                        enabled = !isSending
                     )
 
                     OutlinedTextField(
@@ -268,7 +225,8 @@ fun ContactScreen(
                         label = { Text("Phone Number (Optional)") },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                        singleLine = true
+                        singleLine = true,
+                        enabled = !isSending
                     )
 
                     OutlinedTextField(
@@ -276,7 +234,8 @@ fun ContactScreen(
                         onValueChange = { subject = it },
                         label = { Text("Subject / Purpose of Visit") },
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        singleLine = true,
+                        enabled = !isSending
                     )
 
                     OutlinedTextField(
@@ -285,31 +244,46 @@ fun ContactScreen(
                         label = { Text("Your Message *") },
                         isError = hasAttemptedSubmit && !isMessageValid,
                         supportingText = {
-                            if (hasAttemptedSubmit && !isMessageValid) {
+                            if (hasAttemptedSubmit && !isMessageValid)
                                 Text("Message is required", color = MaterialTheme.colorScheme.error)
-                            }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        minLines = 3
+                        minLines = 3,
+                        enabled = !isSending
                     )
 
                     Button(
                         onClick = {
                             hasAttemptedSubmit = true
                             if (isNameValid && isEmailValid && isMessageValid) {
-                                showSuccessDialog = true
+                                contactViewModel.sendInquiry(name, email, phone, subject, message)
                             }
                         },
                         modifier = Modifier.align(Alignment.End),
+                        enabled = !isSending,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFFB71C1C),
                             contentColor = Color.White
                         ),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Send Message", fontWeight = FontWeight.Bold)
+                        if (isSending) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Sending…", fontWeight = FontWeight.Bold)
+                        } else {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.Send,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Send Message", fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
@@ -317,10 +291,26 @@ fun ContactScreen(
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun ContactScreenPreview() {
-    TasaagaOVCPSTheme {
-        ContactScreen()
+private fun ContactInfoRow(
+    icon: @Composable () -> Unit,
+    iconBg: Color,
+    label: String,
+    value: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .background(iconBg, RoundedCornerShape(8.dp)),
+            contentAlignment = Alignment.Center
+        ) { icon() }
+        Column {
+            Text(text = label, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            Text(text = value, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+        }
     }
 }

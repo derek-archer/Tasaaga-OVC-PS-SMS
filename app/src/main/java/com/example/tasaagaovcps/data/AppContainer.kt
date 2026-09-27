@@ -24,6 +24,7 @@ interface AppContainer {
     val boardingRepository: BoardingRepository
     val staffRepository: StaffRepository
     val geminiRepository: GeminiRepository
+    val contactRepository: ContactRepository
 }
 
 class AppContainerImpl : AppContainer {
@@ -51,4 +52,5 @@ class AppContainerImpl : AppContainer {
     override val boardingRepository: BoardingRepository by lazy { BoardingRepositoryImpl(supabaseClient) }
     override val staffRepository: StaffRepository by lazy { StaffRepositoryImpl(supabaseClient) }
     override val geminiRepository: GeminiRepository by lazy { GeminiRepositoryImpl(BuildConfig.GEMINI_API_KEY) }
+    override val contactRepository: ContactRepository by lazy { ContactRepositoryImpl() }
 }

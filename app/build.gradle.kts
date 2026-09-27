@@ -21,6 +21,9 @@ android {
         // Gemini API key — set GEMINI_API_KEY=<your_key> in local.properties (never commit that file)
         val geminiKey = project.findProperty("GEMINI_API_KEY")?.toString() ?: ""
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
+        // Resend API key — set RESEND_API_KEY=re_<your_key> in local.properties (never commit that file)
+        val resendKey = project.findProperty("RESEND_API_KEY")?.toString() ?: ""
+        buildConfigField("String", "RESEND_API_KEY", "\"$resendKey\"")
     }
 
     buildTypes {

@@ -1,5 +1,6 @@
 package com.example.tasaagaovcps.data.repository
 
+import com.example.tasaagaovcps.BuildConfig
 import com.example.tasaagaovcps.data.model.VolunteerOpportunity
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.JsonClass
@@ -17,9 +18,10 @@ import retrofit2.http.POST
 @JsonClass(generateAdapter = true)
 data class ResendEmailRequest(
     val from: String,
-    val to: String,
+    val to: List<String>,
     val subject: String,
-    val html: String
+    val html: String,
+    val reply_to: String? = null
 )
 
 interface ResendApiService {
@@ -29,6 +31,21 @@ interface ResendApiService {
         @Body request: ResendEmailRequest
     )
 }
+
+/** Shared Resend client factory used by all email-sending repositories. */
+internal fun buildResendService(): ResendApiService {
+    val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+    return Retrofit.Builder()
+        .baseUrl("https://api.resend.com/")
+        .addConverterFactory(MoshiConverterFactory.create(moshi))
+        .build()
+        .create(ResendApiService::class.java)
+}
+
+internal fun resendAuthHeader() = "Bearer ${BuildConfig.RESEND_API_KEY}"
+
+const val RESEND_FROM = "info@derekarcher.org"
+const val RESEND_TO   = "info@derekarcher.org"
 
 interface VolunteerRepository {
     fun getOpportunities(): Flow<List<VolunteerOpportunity>>
@@ -55,17 +72,7 @@ class VolunteerRepositoryImpl(private val supabaseClient: SupabaseClient) : Volu
         )
     )
 
-    private val moshi = Moshi.Builder()
-        .add(KotlinJsonAdapterFactory())
-        .build()
-
-    private val apiService: ResendApiService by lazy {
-        Retrofit.Builder()
-            .baseUrl("https://api.resend.com/")
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
-            .build()
-            .create(ResendApiService::class.java)
-    }
+    private val apiService: ResendApiService by lazy { buildResendService() }
 
     override fun getOpportunities(): Flow<List<VolunteerOpportunity>> = flow {
         val remoteOpps = try {
@@ -85,14 +92,15 @@ class VolunteerRepositoryImpl(private val supabaseClient: SupabaseClient) : Volu
         val htmlContent = "<p><strong>Opportunity:</strong> $opportunityTitle</p><p><strong>Name:</strong> $name</p><p><strong>Email:</strong> $email</p><p><strong>Message:</strong> $message</p>"
 
         val request = ResendEmailRequest(
-            from = "onboarding@resend.dev",
-            to = "derekmukasa@gmail.com",
+            from = RESEND_FROM,
+            to = listOf(RESEND_TO),
             subject = "New Volunteer Application: $opportunityTitle",
-            html = htmlContent
+            html = htmlContent,
+            reply_to = email
         )
 
         apiService.sendEmail(
-            authorization = "Bearer re_placeholder_key",
+            authorization = resendAuthHeader(),
             request = request
         )
     }
