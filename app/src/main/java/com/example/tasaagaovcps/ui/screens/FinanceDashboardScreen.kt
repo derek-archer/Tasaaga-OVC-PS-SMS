@@ -23,8 +23,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tasaagaovcps.ui.components.GeminiChatBottomSheet
+import com.example.tasaagaovcps.ui.components.GeminiInsightCard
 import com.example.tasaagaovcps.ui.components.SummaryCard
 import com.example.tasaagaovcps.ui.theme.TasaagaOVCPSTheme
+import com.example.tasaagaovcps.ui.viewmodel.AppViewModelProvider
+import com.example.tasaagaovcps.ui.viewmodel.FinanceViewModel
 
 data class FinancePaymentItem(
     val receiptNo: String,
@@ -45,7 +50,8 @@ data class FinanceExpenseItem(
 @Composable
 fun FinanceDashboardScreen(
     onLogout: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    financeViewModel: FinanceViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val paymentsList = remember {
         mutableStateListOf(
@@ -65,6 +71,20 @@ fun FinanceDashboardScreen(
 
     var showRecordPaymentDialog by remember { mutableStateOf(false) }
     var showRecordExpenseDialog by remember { mutableStateOf(false) }
+    var showAiChat by remember { mutableStateOf(false) }
+
+    val financeInsightState by financeViewModel.financeInsight.collectAsState()
+
+    // AI Chat Bottom Sheet
+    if (showAiChat) {
+        GeminiChatBottomSheet(
+            roleName = "Finance",
+            onDismiss = { showAiChat = false },
+            onSendMessage = { question, onChunk ->
+                financeViewModel.streamAnswer(question, onChunk)
+            }
+        )
+    }
 
     var totalCollected by remember { mutableDoubleStateOf(32500000.0 + paymentsList.sumOf { it.amount }) }
 
@@ -213,7 +233,7 @@ fun FinanceDashboardScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            FinanceHeader(onLogout)
+            FinanceHeader(onLogout, onAskAi = { showAiChat = true })
         }
 
         item {
@@ -225,6 +245,15 @@ fun FinanceDashboardScreen(
 
         item {
             FinanceSummaryGrid(collectedTotal = totalCollected)
+        }
+
+        // AI Finance Insight Card
+        item {
+            GeminiInsightCard(
+                title = "Finance Analyst — Term 3 2026",
+                state = financeInsightState,
+                onRefresh = { financeViewModel.generateFinanceInsight() }
+            )
         }
 
         item {
@@ -242,7 +271,7 @@ fun FinanceDashboardScreen(
 }
 
 @Composable
-fun FinanceHeader(onLogout: () -> Unit) {
+fun FinanceHeader(onLogout: () -> Unit, onAskAi: () -> Unit = {}) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1A3A6B)) // Website Blue
@@ -272,6 +301,9 @@ fun FinanceHeader(onLogout: () -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.8f)
                 )
+            }
+            IconButton(onClick = onAskAi) {
+                Icon(Icons.Rounded.AutoAwesome, contentDescription = "Ask AI", tint = Color.White)
             }
             IconButton(onClick = onLogout) {
                 Icon(Icons.AutoMirrored.Rounded.Logout, contentDescription = "Logout", tint = Color.White)

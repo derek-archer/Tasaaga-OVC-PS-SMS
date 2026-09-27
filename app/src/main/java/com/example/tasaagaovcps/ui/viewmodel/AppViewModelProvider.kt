@@ -23,6 +23,18 @@ object AppViewModelProvider {
         initializer {
             LoginViewModel(tasaagaApplication().container.userRepository)
         }
+        initializer {
+            TeacherViewModel(
+                attendanceRepository = tasaagaApplication().container.attendanceRepository,
+                geminiRepository     = tasaagaApplication().container.geminiRepository
+            )
+        }
+        initializer {
+            FinanceViewModel(
+                financeRepository = tasaagaApplication().container.financeRepository,
+                geminiRepository  = tasaagaApplication().container.geminiRepository
+            )
+        }
     }
 }
 

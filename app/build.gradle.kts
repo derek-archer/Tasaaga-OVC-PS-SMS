@@ -17,6 +17,10 @@ android {
         versionName = "1.1.0-TSMS"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Gemini API key — set GEMINI_API_KEY=<your_key> in local.properties (never commit that file)
+        val geminiKey = project.findProperty("GEMINI_API_KEY")?.toString() ?: ""
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
     }
 
     buildTypes {
@@ -31,6 +35,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -79,7 +84,10 @@ dependencies {
     implementation(libs.supabase.auth)
     implementation(libs.supabase.compose.auth)
     implementation(libs.ktor.client.android)
-    
+
+    // Gemini AI
+    implementation(libs.google.generativeai)
+
     testImplementation(libs.androidx.core)
     testImplementation(libs.androidx.junit)
     testImplementation(libs.junit)

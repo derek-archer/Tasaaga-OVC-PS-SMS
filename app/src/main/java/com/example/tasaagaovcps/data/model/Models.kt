@@ -52,7 +52,9 @@ data class Profile(
     val role: String,
     val email: String? = null,
     val name: String? = null,
-    val phone: String? = null
+    val phone: String? = null,
+    @SerialName("school_id")
+    val schoolId: String? = null
 )
 
 @Serializable
@@ -72,7 +74,9 @@ data class Student(
     val guardianName: String? = null,
     @SerialName("guardian_phone")
     val guardianPhone: String? = null,
-    val status: String = "Active"
+    val status: String = "Active",
+    @SerialName("school_id")
+    val schoolId: String? = null
 )
 
 @Serializable

@@ -26,8 +26,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tasaagaovcps.ui.components.GeminiChatBottomSheet
+import com.example.tasaagaovcps.ui.components.GeminiInsightCard
 import com.example.tasaagaovcps.ui.components.SummaryCard
 import com.example.tasaagaovcps.ui.theme.TasaagaOVCPSTheme
+import com.example.tasaagaovcps.ui.viewmodel.AppViewModelProvider
+import com.example.tasaagaovcps.ui.viewmodel.TeacherViewModel
 
 data class StudentAttendanceState(
     val id: Int,
@@ -60,7 +65,8 @@ data class StudentResultEntry(
 @Composable
 fun TeacherDashboardScreen(
     onLogout: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    teacherViewModel: TeacherViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val studentList = remember {
         mutableStateListOf(
@@ -85,6 +91,9 @@ fun TeacherDashboardScreen(
     var showEnterMarksDialog by remember { mutableStateOf(false) }
     var showClassListDialog by remember { mutableStateOf(false) }
     var showTimetableDialog by remember { mutableStateOf(false) }
+    var showAiChat by remember { mutableStateOf(false) }
+
+    val attendanceInsightState by teacherViewModel.attendanceInsight.collectAsState()
 
     val presentCount = studentList.count { it.status == "Present" || it.status == "Late" }
     val absentCount = studentList.size - presentCount
@@ -374,6 +383,17 @@ fun TeacherDashboardScreen(
         )
     }
 
+    // AI Chat Bottom Sheet
+    if (showAiChat) {
+        GeminiChatBottomSheet(
+            roleName = "Teacher",
+            onDismiss = { showAiChat = false },
+            onSendMessage = { question, onChunk ->
+                teacherViewModel.streamAnswer(question, onChunk)
+            }
+        )
+    }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -381,7 +401,7 @@ fun TeacherDashboardScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            TeacherHeader(onLogout)
+            TeacherHeader(onLogout, onAskAi = { showAiChat = true })
         }
 
         item {
@@ -397,6 +417,15 @@ fun TeacherDashboardScreen(
 
         item {
             TeacherSummaryGrid(total = studentList.size, present = presentCount, absent = absentCount)
+        }
+
+        // AI Attendance Insight Card
+        item {
+            GeminiInsightCard(
+                title = "Attendance Insight — P.5A",
+                state = attendanceInsightState,
+                onRefresh = { teacherViewModel.generateAttendanceInsight() }
+            )
         }
 
         item {
@@ -419,7 +448,7 @@ fun TeacherDashboardScreen(
 }
 
 @Composable
-fun TeacherHeader(onLogout: () -> Unit) {
+fun TeacherHeader(onLogout: () -> Unit, onAskAi: () -> Unit = {}) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFBC9522)) // Brand Gold
@@ -449,6 +478,9 @@ fun TeacherHeader(onLogout: () -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.8f)
                 )
+            }
+            IconButton(onClick = onAskAi) {
+                Icon(Icons.Rounded.AutoAwesome, contentDescription = "Ask AI", tint = Color.White)
             }
             IconButton(onClick = onLogout) {
                 Icon(Icons.AutoMirrored.Rounded.Logout, contentDescription = "Logout", tint = Color.White)

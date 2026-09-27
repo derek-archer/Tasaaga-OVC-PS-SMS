@@ -1,5 +1,6 @@
 package com.example.tasaagaovcps.data
 
+import com.example.tasaagaovcps.BuildConfig
 import com.example.tasaagaovcps.data.repository.*
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.createSupabaseClient
@@ -15,6 +16,9 @@ interface AppContainer {
     val newsRepository: NewsRepository
     val supabaseClient: SupabaseClient
     val userRepository: UserRepository
+    val attendanceRepository: AttendanceRepository
+    val financeRepository: FinanceRepository
+    val geminiRepository: GeminiRepository
 }
 
 class AppContainerImpl : AppContainer {
@@ -34,4 +38,7 @@ class AppContainerImpl : AppContainer {
     override val volunteerRepository: VolunteerRepository by lazy { VolunteerRepositoryImpl(supabaseClient) }
     override val newsRepository: NewsRepository by lazy { NewsRepositoryImpl(supabaseClient) }
     override val userRepository: UserRepository by lazy { UserRepositoryImpl(supabaseClient) }
+    override val attendanceRepository: AttendanceRepository by lazy { AttendanceRepositoryImpl(supabaseClient) }
+    override val financeRepository: FinanceRepository by lazy { FinanceRepositoryImpl(supabaseClient) }
+    override val geminiRepository: GeminiRepository by lazy { GeminiRepositoryImpl(BuildConfig.GEMINI_API_KEY) }
 }
